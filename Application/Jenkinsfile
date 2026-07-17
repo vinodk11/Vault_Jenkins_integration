@@ -1,0 +1,314 @@
+pipeline {
+
+    agent {
+         kubernetes {
+
+    yaml '''
+apiVersion: v1
+kind: Pod
+
+spec:
+  serviceAccountName: jenkins
+
+  volumes:
+  - name: m2-cache
+    emptyDir: {}
+
+  containers:
+
+  - name: maven
+    image: maven:3.9.6-eclipse-temurin-17
+    command:
+    - cat
+    tty: true
+    volumeMounts:
+    - name: m2-cache
+      mountPath: /root/.m2
+
+  - name: trivy
+    image: aquasec/trivy:0.64.1
+    command:
+    - cat
+    tty: true
+    volumeMounts:
+    - name: m2-cache
+      mountPath: /root/.m2
+
+  - name: sonar
+    image: sonarsource/sonar-scanner-cli:latest
+    command:
+    - cat
+    tty: true
+
+  - name: kaniko
+    image: gcr.io/kaniko-project/executor:debug
+    command:
+    - sleep
+    args:
+    - "9999999"
+    tty: true
+'''
+}
+    }
+
+    environment {
+
+        IMAGE_NAME = "vinod1188/bankapp"
+        IMAGE_TAG  = "v${BUILD_NUMBER}"
+
+        SONAR_URL  = "http://sonarqube.sonarqube:9000"
+    }
+
+    stages {
+
+        stage('Git Checkout') {
+
+            steps {
+
+                git branch: 'main',
+                url: 'https://github.com/vinodk11/ci_mega_project.git'
+            }
+        }
+
+        stage('Load Vault Secrets') {
+
+            steps {
+
+                withVault(
+                    configuration: [
+                        vaultUrl: 'http://vault.vault:8200',
+                        vaultCredentialId: 'vault-k8s',
+                        engineVersion: 2
+                    ],
+
+                    vaultSecrets: [
+
+                        [
+                            path: 'secret/dockerhub',
+                            secretValues: [
+                                [vaultKey: 'username', envVar: 'DOCKER_USER'],
+                                [vaultKey: 'password', envVar: 'DOCKER_PASS']
+                            ]
+                        ],
+
+                        [
+                            path: 'secret/nexus',
+                            secretValues: [
+                                [vaultKey: 'username', envVar: 'NEXUS_USER'],
+                                [vaultKey: 'password', envVar: 'NEXUS_PASS']
+                            ]
+                        ],
+
+                        [
+                            path: 'secret/sonarqube',
+                            secretValues: [
+                                [vaultKey: 'token', envVar: 'SONAR_TOKEN']
+                            ]
+                        ]
+                    ]
+                ) {
+
+                    script {
+
+                        env.DOCKER_USER = "${DOCKER_USER}"
+                        env.DOCKER_PASS = "${DOCKER_PASS}"
+
+                        env.NEXUS_USER  = "${NEXUS_USER}"
+                        env.NEXUS_PASS  = "${NEXUS_PASS}"
+
+                        env.SONAR_TOKEN = "${SONAR_TOKEN}"
+                    }
+                }
+            }
+        }
+
+        stage('Compile') {
+
+            steps {
+
+                container('maven') {
+
+                    sh 'mvn clean install -DskipTests'
+                }
+            }
+        }
+
+        stage('Unit Testing') {
+
+            steps {
+
+                container('maven') {
+
+                    sh 'mvn test'
+                }
+            }
+        }
+
+        stage('Trivy FileSystem Scan') {
+
+            steps {
+
+                container('trivy') {
+
+                    sh '''
+                    trivy fs \
+                      --scanners vuln \
+                      --format table \
+                      -o fs-report.html .
+                    '''
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+
+            steps {
+
+                container('sonar') {
+
+                    sh '''
+                    sonar-scanner \
+                      -Dsonar.projectKey=gcbank \
+                      -Dsonar.projectName=gcbank \
+                      -Dsonar.sources=. \
+                      -Dsonar.java.binaries=target \
+                      -Dsonar.host.url=$SONAR_URL \
+                      -Dsonar.token=$SONAR_TOKEN
+                    '''
+                }
+            }
+        }
+
+       
+
+        stage('Build Package') {
+
+            steps {
+
+                container('maven') {
+
+                    sh 'mvn package -DskipTests'
+                }
+            }
+        }
+
+         stage('Publish Artifact To Nexus') {
+
+            steps {
+
+                container('maven') {
+
+                   withMaven(globalMavenSettingsConfig: 'maven', traceability: true){
+                        sh 'mvn deploy -DskipTests'
+                    }
+                }
+            }
+        }
+
+        stage('Build & Push Docker Image') {
+
+            steps {
+
+                container('kaniko') {
+
+                    sh '''
+                    mkdir -p /kaniko/.docker
+
+                    AUTH=$(echo -n "$DOCKER_USER:$DOCKER_PASS" | base64 | tr -d '\\n')
+
+                    echo "{
+                      \\"auths\\": {
+                        \\"https://index.docker.io/v1/\\": {
+                          \\"auth\\": \\"$AUTH\\"
+                        }
+                      }
+                    }" > /kaniko/.docker/config.json
+
+                    /kaniko/executor \
+                      --context $(pwd) \
+                      --dockerfile Dockerfile \
+                      --destination docker.io/$IMAGE_NAME:$IMAGE_TAG \
+                      --destination docker.io/$IMAGE_NAME:$IMAGE_TAG \
+                      --verbosity=debug
+                    '''
+                }
+            }
+        }
+
+        stage('Trivy Docker Image Scan') {
+
+            steps {
+
+                container('trivy') {
+
+                    sh '''
+                    trivy image \
+                      --scanners vuln \
+                      --format table \
+                      -o image-report.html \
+                      docker.io/$IMAGE_NAME:$IMAGE_TAG
+                    '''
+                }
+            }
+        }
+
+        stage('Update Manifest') {
+            steps {
+                withVault(
+                    configuration: [
+                        vaultUrl: 'http://vault.vault:8200',
+                        vaultCredentialId: 'vault-k8s',
+                        engineVersion: 2
+                    ],
+                    vaultSecrets: [[
+                        path: 'secret/git',
+                        secretValues: [
+                        [vaultKey: 'username', envVar: 'GIT_USERNAME'],
+                        [vaultKey: 'password', envVar: 'GIT_PASSWORD']
+                    ]
+                ]]
+            ) {
+                sh """
+                    rm -rf DevSecOps-jenkins-vault
+
+                    git clone https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GIT_USERNAME}/DevSecOps-jenkins-vault.git
+
+                    cd DevSecOps-jenkins-vault
+
+                    sed -i 's#image:.*#image: ${IMAGE_NAME}:${IMAGE_TAG}#' bank_app/bank_app.yml
+
+                    git config user.name "${GIT_USERNAME}"
+                    git config user.email "<your-gmail-ID>"
+
+                    git add bank_app/bank_app.yml
+
+                    git diff --cached --quiet || \
+                    git commit -m "Update image to ${IMAGE_TAG}"
+
+                    git push origin main
+                """
+              }
+           }
+       }
+               
+        
+     }
+
+    post {
+
+        always {
+
+            archiveArtifacts artifacts: '*.html', fingerprint: true
+        }
+
+        success {
+
+            echo 'Pipeline executed successfully'
+        }
+
+        failure {
+
+            echo 'Pipeline failed'
+        }
+    }
+}

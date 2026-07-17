@@ -1,0 +1,171 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git url: 'https://github.com/vinodk11/DevSecOps-jenkins-vault.git', branch: 'main'
+            }
+        }
+
+        stage('Setup Kubeconfig') {
+            steps {
+                withKubeCredentials(
+                    kubectlCredentials: [
+                        [
+                            caCertificate: '',
+                            clusterName: 'my-eks-cluster',
+                            contextName: 'jenkins-context',
+                            credentialsId: 'kube-config',
+                            namespace: 'jenkins',
+                            serverUrl: 'https://C51CFA192D315B312E453613818D833A.gr7.us-east-1.eks.amazonaws.com'
+                        ]
+                    ]
+                ) {
+                    sh 'kubectl version --client'
+                    sh 'kubectl get nodes'
+                }
+            }
+        }
+
+
+        stage('Deploy Jenkins') {
+            steps {
+                withKubeCredentials(
+                    kubectlCredentials: [
+                        [
+                            caCertificate: '',
+                            clusterName: 'my-eks-cluster',
+                            contextName: 'jenkins-context',
+                            credentialsId: 'kube-config',
+                            namespace: 'jenkins',
+                            serverUrl: 'https://C51CFA192D315B312E453613818D833A.gr7.us-east-1.eks.amazonaws.com'
+                        ]
+                    ]
+                ) {
+                    sh 'kubectl apply -f Jenkins_Tools/jenkins_stateful_set/'
+                    sh 'sleep 15'
+                    sh 'kubectl rollout status statefulset/jenkins -n jenkins --timeout=120s'
+                }
+            }
+        }
+
+        stage('Deploy Vault') {
+            steps {
+                withKubeCredentials(
+                    kubectlCredentials: [
+                        [
+                            caCertificate: '',
+                            clusterName: 'my-eks-cluster',
+                            contextName: 'jenkins-context',
+                            credentialsId: 'kube-config',
+                            namespace: 'vault',
+                            serverUrl: 'https://C51CFA192D315B312E453613818D833A.gr7.us-east-1.eks.amazonaws.com'
+                        ]
+                    ]
+                ) {
+                    sh '''
+                        helm repo add hashicorp https://helm.releases.hashicorp.com || true
+                        helm repo update
+
+                        kubectl create namespace vault --dry-run=client -o yaml | kubectl apply -f -
+
+                         helm upgrade --install vault hashicorp/vault \
+                         -n vault \
+                         -f Jenkins_Tools/vault/vault-values.yaml \
+                          --wait \
+                          --timeout 10m
+
+                         kubectl apply -f Jenkins_Tools/vault/70-ingress.yaml
+                    '''   
+                }
+            }
+        }
+        stage('Deploy Nexus') {
+            steps {
+                withKubeCredentials(
+                    kubectlCredentials: [
+                        [
+                            caCertificate: '',
+                            clusterName: 'my-eks-cluster',
+                            contextName: 'jenkins-context',
+                            credentialsId: 'kube-config',
+                            namespace: 'jenkins',
+                            serverUrl: 'https://C51CFA192D315B312E453613818D833A.gr7.us-east-1.eks.amazonaws.com'
+                        ]
+                    ]
+                ) {
+                    sh 'kubectl apply -f Jenkins_Tools/nexus/'
+                    sh 'sleep 15'
+                    sh 'kubectl rollout status deployment/nexus -n nexus --timeout=120s'
+                }
+            }
+        }
+
+        stage('Deploy SonarQube') {
+            steps {
+                withKubeCredentials(
+                    kubectlCredentials: [
+                        [
+                            caCertificate: '',
+                            clusterName: 'my-eks-cluster',
+                            contextName: 'jenkins-context',
+                            credentialsId: 'kube-config',
+                            namespace: 'jenkins',
+                            serverUrl: 'https://C51CFA192D315B312E453613818D833A.gr7.us-east-1.eks.amazonaws.com'
+                        ]
+                    ]
+                ) {
+                    sh 'kubectl apply -f Jenkins_Tools/sonar/'
+                    sh 'sleep 15'
+                    sh 'kubectl rollout status deployment/sonarqube -n sonarqube --timeout=180s'
+                    sh 'kubectl rollout status deployment/postgres -n sonarqube --timeout=120s'
+                }
+            }
+        }
+
+        stage('Verify Deployments') {
+            steps {
+                withKubeCredentials(
+                    kubectlCredentials: [
+                        [
+                            caCertificate: '',
+                            clusterName: 'my-eks-cluster',
+                            contextName: 'jenkins-context',
+                            credentialsId: 'kube-config',
+                            namespace: 'jenkins',
+                            serverUrl: 'https://C51CFA192D315B312E453613818D833A.gr7.us-east-1.eks.amazonaws.com'
+                        ]
+                    ]
+                ) {
+                    sh '''
+                        echo "=== All Pods Status ==="
+                        kubectl get pods -A -l app=jenkins
+                        kubectl get pods -A -l app=vault
+                        kubectl get pods -A -l app=nexus
+                        kubectl get pods -A -l app=sonarqube
+                        kubectl get pods -A -l app=postgres
+                        
+                        echo ""
+                        echo "=== Ingress Status ==="
+                        kubectl get ingress -A
+                        
+                        echo ""
+                        echo "=== ALB Hostname ==="
+                        kubectl get ingress jenkins-ingress -n jenkins -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+                        echo ""
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline completed'
+        }
+        failure {
+            echo 'Pipeline failed - check logs above'
+        }
+    }
+}

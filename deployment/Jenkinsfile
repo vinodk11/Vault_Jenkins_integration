@@ -1,0 +1,95 @@
+pipeline {
+    agent {
+        kubernetes {
+            defaultContainer 'kubectl'
+            yaml '''
+apiVersion: v1
+kind: Pod
+spec:
+  serviceAccountName: jenkins
+
+  containers:
+  - name: jnlp
+    image: jenkins/inbound-agent:latest-jdk21
+    args: ['$(JENKINS_SECRET)', '$(JENKINS_NAME)']
+
+  - name: kubectl
+    image: vinod1188/kubectlpod:v1
+    command:
+    - /bin/sh
+    args:
+    - -c
+    - sleep infinity
+'''
+        }
+    }
+
+    stages {
+
+        stage('Checkout Repository') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Deploy Application') {
+            steps {
+                container('kubectl') {
+                    withVault(
+                        configuration: [
+                            vaultUrl: 'http://vault.vault:8200',
+                            vaultCredentialId: 'vault-k8s',
+                            engineVersion: 2
+                        ],
+                        vaultSecrets: [[
+                            path: 'secret/ks8',
+                            secretValues: [
+                                [vaultKey: 'token',  envVar: 'KUBE_TOKEN'],
+                                [vaultKey: 'server', envVar: 'KUBE_SERVER'],
+                                [vaultKey: 'ca.crt', envVar: 'KUBE_CA']
+                            ]
+                        ]]
+                    ) {
+
+                        sh '''
+                            set -x
+
+                            echo "Checking kubectl..."
+                            kubectl version --client
+
+                            echo "$KUBE_CA" > ca.crt
+
+                            echo "Checking cluster..."
+                            kubectl \
+                                --server="$KUBE_SERVER" \
+                                --token="$KUBE_TOKEN" \
+                                --certificate-authority=ca.crt \
+                                get nodes
+
+                            echo "Applying manifests..."
+                            kubectl \
+                                --server="$KUBE_SERVER" \
+                                --token="$KUBE_TOKEN" \
+                                --certificate-authority=ca.crt \
+                                apply -f deployment/
+                        '''
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+
+        success {
+            echo "Application deployed successfully."
+        }
+
+        failure {
+            echo "Application deployment failed."
+        }
+    }
+}

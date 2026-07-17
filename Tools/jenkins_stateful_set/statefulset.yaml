@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: jenkins
+  namespace: jenkins
+spec:
+  serviceName: jenkins
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: jenkins
+
+  template:
+    metadata:
+      labels:
+        app: jenkins
+
+    spec:
+      serviceAccountName: jenkins
+
+      securityContext:
+        fsGroup: 1000
+
+      containers:
+      - name: jenkins
+        image: jenkins/jenkins:lts
+
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+
+        ports:
+        - containerPort: 8080
+          name: http
+
+        - containerPort: 50000
+          name: agent
+
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+          limits:
+            cpu: "1"
+            memory: "2Gi"
+
+        volumeMounts:
+        - name: jenkins-home
+          mountPath: /var/jenkins_home
+
+  volumeClaimTemplates:
+  - metadata:
+      name: jenkins-home
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      storageClassName: gp3-storage
+      resources:
+        requests:
+          storage: 20Gi

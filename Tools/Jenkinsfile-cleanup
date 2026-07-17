@@ -1,0 +1,245 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Setup Kubeconfig') {
+            steps {
+                withKubeCredentials(
+                    kubectlCredentials: [
+                        [
+                            caCertificate: '',
+                            clusterName: 'my-eks-cluster',
+                            contextName: 'jenkins-context',
+                            credentialsId: 'kube-config',
+                            namespace: 'jenkins',
+                            serverUrl: 'https://75784918A311A1B63E47CDF0EE0A2BDD.gr7.us-east-1.eks.amazonaws.com'
+                        ]
+                    ]
+                ) {
+                    sh 'kubectl version --client'
+                    sh 'kubectl get nodes'
+                }
+            }
+        }
+
+        stage('Delete Unified Ingress') {
+            steps {
+                withKubeCredentials(
+                    kubectlCredentials: [
+                        [
+                            caCertificate: '',
+                            clusterName: 'my-eks-cluster',
+                            contextName: 'jenkins-context',
+                            credentialsId: 'kube-config',
+                            namespace: 'jenkins',
+                            serverUrl: 'https://75784918A311A1B63E47CDF0EE0A2BDD.gr7.us-east-1.eks.amazonaws.com'
+                        ]
+                    ]
+                ) {
+                    sh '''
+                        echo "=== Deleting Ingress Resources ==="
+                        kubectl delete ingress -n jenkins jenkins-ingress --ignore-not-found=true
+                        kubectl delete ingress -n vault vault-ingress --ignore-not-found=true
+                        kubectl delete ingress -n nexus nexus-ingress --ignore-not-found=true
+                        kubectl delete ingress -n sonarqube sonarqube-ingress --ignore-not-found=true
+                        kubectl delete ingress -n jenkins unified-ingress --ignore-not-found=true
+                        sleep 10
+                    '''
+                }
+            }
+        }
+
+        stage('Delete SonarQube') {
+            steps {
+                withKubeCredentials(
+                    kubectlCredentials: [
+                        [
+                            caCertificate: '',
+                            clusterName: 'my-eks-cluster',
+                            contextName: 'jenkins-context',
+                            credentialsId: 'kube-config',
+                            namespace: 'jenkins',
+                            serverUrl: 'https://75784918A311A1B63E47CDF0EE0A2BDD.gr7.us-east-1.eks.amazonaws.com'
+                        ]
+                    ]
+                ) {
+                    sh '''
+                        echo "=== Deleting SonarQube Resources ==="
+                        kubectl delete -f Jenkins_Tools/sonar/ --ignore-not-found=true
+                        sleep 15
+                        # Force delete if stuck
+                        kubectl delete pods -n sonarqube -l app=sonarqube --force --grace-period=0 --ignore-not-found=true
+                        kubectl delete pods -n sonarqube -l app=postgres --force --grace-period=0 --ignore-not-found=true
+                    '''
+                }
+            }
+        }
+
+        stage('Delete Nexus') {
+            steps {
+                withKubeCredentials(
+                    kubectlCredentials: [
+                        [
+                            caCertificate: '',
+                            clusterName: 'my-eks-cluster',
+                            contextName: 'jenkins-context',
+                            credentialsId: 'kube-config',
+                            namespace: 'jenkins',
+                            serverUrl: 'https://75784918A311A1B63E47CDF0EE0A2BDD.gr7.us-east-1.eks.amazonaws.com'
+                        ]
+                    ]
+                ) {
+                    sh '''
+                        echo "=== Deleting Nexus Resources ==="
+                        kubectl delete -f Jenkins_Tools/nexus/ --ignore-not-found=true
+                        sleep 10
+                        kubectl delete pods -n nexus -l app=nexus --force --grace-period=0 --ignore-not-found=true
+                    '''
+                }
+            }
+        }
+
+        stage('Delete Vault') {
+            steps {
+                withKubeCredentials(
+                    kubectlCredentials: [
+                        [
+                            caCertificate: '',
+                            clusterName: 'my-eks-cluster',
+                            contextName: 'jenkins-context',
+                            credentialsId: 'kube-config',
+                            namespace: 'jenkins',
+                            serverUrl: 'https://75784918A311A1B63E47CDF0EE0A2BDD.gr7.us-east-1.eks.amazonaws.com'
+                        ]
+                    ]
+                ) {
+                    sh '''
+                        echo "=== Deleting Vault Resources ==="
+                        kubectl delete -f Jenkins_Tools/vault/ --ignore-not-found=true
+                        sleep 10
+                        kubectl delete pods -n vault -l app=vault --force --grace-period=0 --ignore-not-found=true
+                    '''
+                }
+            }
+        }
+
+        stage('Delete Jenkins') {
+            steps {
+                withKubeCredentials(
+                    kubectlCredentials: [
+                        [
+                            caCertificate: '',
+                            clusterName: 'my-eks-cluster',
+                            contextName: 'jenkins-context',
+                            credentialsId: 'kube-config',
+                            namespace: 'jenkins',
+                            serverUrl: 'https://75784918A311A1B63E47CDF0EE0A2BDD.gr7.us-east-1.eks.amazonaws.com'
+                        ]
+                    ]
+                ) {
+                    sh '''
+                        echo "=== Deleting Jenkins Resources ==="
+                        kubectl delete -f Jenkins_Tools/jenkins_stateful_set/ --ignore-not-found=true
+                        sleep 10
+                        kubectl delete pods -n jenkins -l app=jenkins --force --grace-period=0 --ignore-not-found=true
+                    '''
+                }
+            }
+        }
+
+        stage('Delete Jenkins ServiceAccount & RBAC') {
+            steps {
+                withKubeCredentials(
+                    kubectlCredentials: [
+                        [
+                            caCertificate: '',
+                            clusterName: 'my-eks-cluster',
+                            contextName: 'jenkins-context',
+                            credentialsId: 'kube-config',
+                            namespace: 'jenkins',
+                            serverUrl: 'https://75784918A311A1B63E47CDF0EE0A2BDD.gr7.us-east-1.eks.amazonaws.com'
+                        ]
+                    ]
+                ) {
+                    sh '''
+                        echo "=== Deleting Jenkins ServiceAccount & RBAC ==="
+                        kubectl delete clusterrolebinding jenkins-cluster-role-binding --ignore-not-found=true
+                        kubectl delete clusterrole jenkins-cluster-role --ignore-not-found=true
+                        kubectl delete serviceaccount jenkins -n jenkins --ignore-not-found=true
+                        kubectl delete namespace jenkins --ignore-not-found=true
+                    '''
+                }
+            }
+        }
+
+        stage('Delete Remaining Namespaces') {
+            steps {
+                withKubeCredentials(
+                    kubectlCredentials: [
+                        [
+                            caCertificate: '',
+                            clusterName: 'my-eks-cluster',
+                            contextName: 'jenkins-context',
+                            credentialsId: 'kube-config',
+                            namespace: 'jenkins',
+                            serverUrl: 'https://75784918A311A1B63E47CDF0EE0A2BDD.gr7.us-east-1.eks.amazonaws.com'
+                        ]
+                    ]
+                ) {
+                    sh '''
+                        echo "=== Deleting Remaining Namespaces ==="
+                        kubectl delete namespace vault --ignore-not-found=true
+                        kubectl delete namespace nexus --ignore-not-found=true
+                        kubectl delete namespace sonarqube --ignore-not-found=true
+                        sleep 10
+                    '''
+                }
+            }
+        }
+
+        stage('Verify Cleanup') {
+            steps {
+                withKubeCredentials(
+                    kubectlCredentials: [
+                        [
+                            caCertificate: '',
+                            clusterName: 'my-eks-cluster',
+                            contextName: 'jenkins-context',
+                            credentialsId: 'kube-config',
+                            namespace: 'jenkins',
+                            serverUrl: 'https://75784918A311A1B63E47CDF0EE0A2BDD.gr7.us-east-1.eks.amazonaws.com'
+                        ]
+                    ]
+                ) {
+                    sh '''
+                        echo "=== Remaining Resources ==="
+                        echo "Namespaces:"
+                        kubectl get ns | grep -E "jenkins|vault|nexus|sonarqube" || echo "  None found"
+                        
+                        echo ""
+                        echo "PVCs:"
+                        kubectl get pvc -A | grep -E "jenkins|vault|nexus|sonarqube|postgres" || echo "  None found"
+                        
+                        echo ""
+                        echo "Ingresses:"
+                        kubectl get ingress -A | grep -E "jenkins|vault|nexus|sonarqube" || echo "  None found"
+                        
+                        echo ""
+                        echo "ClusterRoles/RoleBindings:"
+                        kubectl get clusterrole | grep jenkins || echo "  None found"
+                        kubectl get clusterrolebinding | grep jenkins || echo "  None found"
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Cleanup pipeline completed'
+        }
+        failure {
+            echo 'Cleanup had issues - check output above'
+        }
+    }
+}

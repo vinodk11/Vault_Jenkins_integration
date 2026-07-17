@@ -1,0 +1,124 @@
+// Jenkinsfile – Terraform CI/CD for AWS (Fixed)
+
+pipeline {
+    agent {
+        docker {
+            image 'hashicorp/terraform:1.9.7'
+            args '--entrypoint="" -u root:root'
+        }
+    }
+
+    // -----------------------------------------------------------------
+    // Parameters
+    // -----------------------------------------------------------------
+    parameters {
+        choice(
+            name: 'TF_ACTION',
+            choices: ['plan', 'apply', 'destroy'],
+            description: 'Select Terraform operation to run'
+        )
+
+        string(
+            name: 'WORKSPACE',
+            defaultValue: 'default',
+            description: 'Terraform workspace (e.g., dev, prod)'
+        )
+
+        booleanParam(
+            name: 'AUTO_APPROVE',
+            defaultValue: true,
+            description: 'Skip approval prompt for apply/destroy'
+        )
+    }
+
+    // -----------------------------------------------------------------
+    // Environment Variables
+    // -----------------------------------------------------------------
+    environment {
+        TF_IN_AUTOMATION = 'true'
+        
+    }
+
+    // -----------------------------------------------------------------
+    // Pipeline Stages
+    // -----------------------------------------------------------------
+    stages {
+
+        stage('Checkout') {
+            steps {
+                git url: 'https://github.com/vinodk11/DevSecOps-jenkins-vault.git', branch: 'main'
+            }
+        }
+
+        stage('Terraform Init') {
+            steps {
+                dir('eks_cluster') {
+                    sh '''
+                        # FIRST initialize backend (mandatory for S3)
+                        terraform init -input=false -reconfigure
+
+                        # THEN select or create workspace
+                        terraform workspace select "${WORKSPACE}" \
+                        || terraform workspace new "${WORKSPACE}"
+                    '''    
+
+                }
+            }
+        }
+
+        stage('Terraform Action') {
+            steps {
+                dir('eks_cluster') {
+                    script {
+
+                        def commonArgs = "-input=false -lock=true -no-color"
+                        def approveFlag = params.AUTO_APPROVE ? "-auto-approve" : ""
+
+                        if (params.TF_ACTION == 'plan') {
+
+                            sh "terraform plan ${commonArgs}"
+
+                        } else if (params.TF_ACTION == 'apply') {
+
+                            sh "terraform apply ${commonArgs} ${approveFlag}"
+
+                        } else if (params.TF_ACTION == 'destroy') {
+
+                            sh "terraform destroy ${commonArgs} ${approveFlag}"
+
+                        } else {
+
+                            error "Unsupported TF_ACTION: ${params.TF_ACTION}"
+
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Cleanup') {
+            steps {
+                script {
+                    if (params.TF_ACTION == 'apply' || params.TF_ACTION == 'destroy') {
+                        archiveArtifacts artifacts: 'eks_cluster/**/*.tfstate', fingerprint: true
+                    }
+                }
+                cleanWs()
+            }
+        }
+    }
+
+    // -----------------------------------------------------------------
+    // Notifications
+    // -----------------------------------------------------------------
+    post {
+
+        success {
+            echo "✅ Terraform ${params.TF_ACTION} completed successfully."
+        }
+
+        failure {
+            echo "❌ Terraform ${params.TF_ACTION} failed."
+        }
+    }
+}
