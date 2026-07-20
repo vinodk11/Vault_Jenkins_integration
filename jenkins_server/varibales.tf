@@ -20,7 +20,7 @@ variable "aws_ami" {
 variable "aws_keypair" {
     description = "to login to the server"
     type = string
-    default = "terraform_new"
+    default = "CloudForge"
   
 }
 
