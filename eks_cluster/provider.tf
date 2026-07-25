@@ -8,7 +8,7 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "<your backet name>" 
+    bucket         = "vault-jenkins-ingretration-25-07-2025" 
     key            = "eks-cluster/terraform.tfstate"
     region         = "us-east-1"
     dynamodb_table = "terraform-state-lock"

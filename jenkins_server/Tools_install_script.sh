@@ -62,13 +62,7 @@ apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-co
 systemctl enable docker
 systemctl start docker
 
-########################################
-# Allow ubuntu & jenkins users Docker access
-########################################
-usermod -aG docker ubuntu || true
-usermod -aG docker jenkins || true
-
-########################################
+#######################################
 # Install AWS CLI v2
 ########################################
 cd /tmp
@@ -131,6 +125,17 @@ apt install jenkins -y
 
 systemctl enable jenkins
 systemctl start jenkins
+
+
+########################################
+# Allow ubuntu & jenkins users Docker access
+########################################
+usermod -aG docker ubuntu || true
+usermod -aG docker jenkins || true
+newgrp docker
+
+systemctl restart docker 
+systemctl restart jenkins
 
 ########################################
 # Verify installations
