@@ -98,16 +98,6 @@ cd jenkins_server
 ---
 # Step 5: Review Terraform Variables
 
-> [!NOTE]
-
-Before getting started, configure the Terraform remote backend by creating an S3 bucket and a DynamoDB table for state locking. Run the backend.sh script to provision these resources.
-
-```bash
-cd jenkins_server 
-chmod +u backend.sh
-./backend.sh  <your backet name>  <region>
-```
-
 Open:
 
 ```text
@@ -124,6 +114,17 @@ key_name = "devsecops-key"
 
 environment = "dev"
 ```
+
+> [!NOTE]
+
+Before getting started, configure the Terraform remote backend by creating an S3 bucket and a DynamoDB table for state locking. Run the backend.sh script to provision these resources.
+
+```bash
+cd jenkins_server 
+chmod +u backend.sh
+./backend.sh  <your backet name>  <region>
+```
+
 OPen:
 ```text
 provide.tf file add your backet name which you created earlier using backen.sh script
@@ -138,6 +139,14 @@ backend "s3" {
     dynamodb_table = "terraform-state-lock"
     encrypt        = true
   }
+```  
+
+Push change to git hub 
+
+```bash
+git .
+git commit -m "added bucket  name in the provider.tf"
+git psuh -u origin <branch name> (main )
 ```
 
 Modify values as required.

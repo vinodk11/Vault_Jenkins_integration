@@ -3,7 +3,7 @@ resource "aws_instance" "jenkins-vm" {
     ami = data.aws_ami.ubuntu.id
     instance_type = var.instance_type
     key_name = var.aws_keypair
-    user_data = file("${path.module}/install_script.sh")
+    user_data = file("${path.module}/Tools_install_script.sh")
     vpc_security_group_ids = [ aws_security_group.ssh-sg.id, aws_security_group.jenkis-sg.id ]
     root_block_device {
       volume_size = var.disk_size
