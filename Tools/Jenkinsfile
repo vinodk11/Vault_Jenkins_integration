@@ -43,7 +43,7 @@ pipeline {
                         ]
                     ]
                 ) {
-                    sh 'kubectl apply -f Jenkins_Tools/jenkins_stateful_set/'
+                    sh 'kubectl apply -f Tools/jenkins_stateful_set/'
                     sh 'sleep 15'
                     sh 'kubectl rollout status statefulset/jenkins -n jenkins --timeout=120s'
                 }
@@ -72,11 +72,11 @@ pipeline {
 
                          helm upgrade --install vault hashicorp/vault \
                          -n vault \
-                         -f Jenkins_Tools/vault/vault-values.yaml \
+                         -f Tools/vault/vault-values.yaml \
                           --wait \
                           --timeout 10m
 
-                         kubectl apply -f Jenkins_Tools/vault/70-ingress.yaml
+                         kubectl apply -f Tools/vault/70-ingress.yaml
                     '''   
                 }
             }
@@ -95,7 +95,7 @@ pipeline {
                         ]
                     ]
                 ) {
-                    sh 'kubectl apply -f Jenkins_Tools/nexus/'
+                    sh 'kubectl apply -f Tools/nexus/'
                     sh 'sleep 15'
                     sh 'kubectl rollout status deployment/nexus -n nexus --timeout=120s'
                 }
@@ -116,7 +116,7 @@ pipeline {
                         ]
                     ]
                 ) {
-                    sh 'kubectl apply -f Jenkins_Tools/sonar/'
+                    sh 'kubectl apply -f Tools/sonar/'
                     sh 'sleep 15'
                     sh 'kubectl rollout status deployment/sonarqube -n sonarqube --timeout=180s'
                     sh 'kubectl rollout status deployment/postgres -n sonarqube --timeout=120s'
