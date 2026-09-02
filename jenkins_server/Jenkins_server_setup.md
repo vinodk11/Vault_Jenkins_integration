@@ -101,7 +101,7 @@ cd jenkins_server
 Open:
 
 ```text
-terraform.tfvars
+Variables.tf
 ```
 Example:
 
@@ -110,9 +110,7 @@ region = "us-east-1"
 
 instance_type = "t3.large"
 
-key_name = "devsecops-key"
-
-environment = "dev"
+key_name = "<your kay name>"
 ```
 
 > [!NOTE]
@@ -127,7 +125,7 @@ chmod +u backend.sh
 
 OPen:
 ```text
-provide.tf file add your backet name which you created earlier using backen.sh script
+provide.tf file in the eks_cluster folder add your backet name which you created earlier using backen.sh script
 ```
 example:
 
@@ -146,7 +144,7 @@ Push change to git hub
 ```bash
 git .
 git commit -m "added bucket  name in the provider.tf"
-git psuh -u origin <branch name> (main )
+git psuh
 ```
 
 Modify values as required.
