@@ -1,13 +1,13 @@
 resource "aws_eks_cluster" "my_eks_cluster" {
   name     = var.eks_cluster_name
   role_arn = aws_iam_role.eks_cluster_role.arn
-  version  = "1.30"
+  version  = var.eks_version
 
   vpc_config {
-    subnet_ids              = var.subnet_ids
+    subnet_ids = var.subnet_ids
     #endpoint_private_access = true
-    endpoint_public_access  = true
-    public_access_cidrs     = ["0.0.0.0/0"]
+    endpoint_public_access = true
+    public_access_cidrs    = ["0.0.0.0/0"]
   }
 
   kubernetes_network_config {
@@ -19,24 +19,24 @@ resource "aws_eks_cluster" "my_eks_cluster" {
     aws_iam_role_policy_attachment.amazon_eks_vpc_resource_controller
   ]
 }
-       
+
 
 ##############################################################################
 resource "aws_iam_role" "eks_cluster_role" {
-    name = "eks-cluster-role"
-    assume_role_policy = jsonencode({
-      Version = "2012-10-17"
-      Statement = [
-        {
-          Action = "sts:AssumeRole"
-          Effect = "Allow"
-          Principal = {
-            Service = "eks.amazonaws.com"
-          }
-        },
-      ]
-    })
-  
+  name = "eks-cluster-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "eks.amazonaws.com"
+        }
+      },
+    ]
+  })
+
 }
 
 # Attach the essential AWS-managed policy for the cluster

@@ -8,7 +8,7 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "vault-jenkins-ingretration-25-07-2025" 
+    bucket         = "vault-jenkins-ingretration-25-07-2025"
     key            = "eks-cluster/terraform.tfstate"
     region         = "us-east-1"
     dynamodb_table = "terraform-state-lock"
@@ -26,7 +26,7 @@ data "aws_eks_cluster_auth" "cluster" {
 }
 
 provider "kubernetes" {
-  host                   = aws_eks_cluster.my_eks_cluster.endpoint
+  host = aws_eks_cluster.my_eks_cluster.endpoint
   cluster_ca_certificate = base64decode(
     aws_eks_cluster.my_eks_cluster.certificate_authority[0].data
   )

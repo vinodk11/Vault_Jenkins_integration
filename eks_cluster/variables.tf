@@ -10,6 +10,12 @@ variable "eks_cluster_name" {
   default     = "CloudForge-cluster"
 }
 
+variable "eks_version" {
+  description = "The desired Kubernetes version for the EKS cluster."
+  type        = string
+  default     = "1.31"
+}
+
 # List of subnet IDs for the VPC where the cluster will be created
 variable "subnet_ids" {
   description = "Subnet IDs for the EKS cluster VPC."
@@ -58,12 +64,12 @@ variable "max_size" {
 variable "vpc_id" {
   description = "The ID of the VPC where the EKS cluster and SGs will be created."
   type        = string
-  default = "vpc-0d7dfc3c42d0f39c0"
+  default     = "vpc-0d7dfc3c42d0f39c0"
 }
 
 variable "key_pair_name" {
   description = "key pair name"
-  type = string
-  default = "CloudForge"
-  
+  type        = string
+  default     = "CloudForge"
+
 }
