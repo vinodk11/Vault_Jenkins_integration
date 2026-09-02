@@ -18,7 +18,7 @@ pipeline {
                             contextName: 'jenkins-context',
                             credentialsId: 'kube-config',
                             namespace: 'jenkins',
-                            serverUrl: 'https://C51CFA192D315B312E453613818D833A.gr7.us-east-1.eks.amazonaws.com'
+                            serverUrl: 'https://ED39DA02E2FC0B13E6BFC6D28510626C.gr7.us-east-1.eks.amazonaws.com'
                         ]
                     ]
                 ) {
@@ -39,7 +39,7 @@ pipeline {
                             contextName: 'jenkins-context',
                             credentialsId: 'kube-config',
                             namespace: 'jenkins',
-                            serverUrl: 'https://C51CFA192D315B312E453613818D833A.gr7.us-east-1.eks.amazonaws.com'
+                            serverUrl: 'https://ED39DA02E2FC0B13E6BFC6D28510626C.gr7.us-east-1.eks.amazonaws.com'
                         ]
                     ]
                 ) {
@@ -60,7 +60,7 @@ pipeline {
                             contextName: 'jenkins-context',
                             credentialsId: 'kube-config',
                             namespace: 'vault',
-                            serverUrl: 'https://C51CFA192D315B312E453613818D833A.gr7.us-east-1.eks.amazonaws.com'
+                            serverUrl: 'https://ED39DA02E2FC0B13E6BFC6D28510626C.gr7.us-east-1.eks.amazonaws.com'
                         ]
                     ]
                 ) {
@@ -91,7 +91,7 @@ pipeline {
                             contextName: 'jenkins-context',
                             credentialsId: 'kube-config',
                             namespace: 'jenkins',
-                            serverUrl: 'https://C51CFA192D315B312E453613818D833A.gr7.us-east-1.eks.amazonaws.com'
+                            serverUrl: 'https://ED39DA02E2FC0B13E6BFC6D28510626C.gr7.us-east-1.eks.amazonaws.com'
                         ]
                     ]
                 ) {
@@ -112,7 +112,7 @@ pipeline {
                             contextName: 'jenkins-context',
                             credentialsId: 'kube-config',
                             namespace: 'jenkins',
-                            serverUrl: 'https://C51CFA192D315B312E453613818D833A.gr7.us-east-1.eks.amazonaws.com'
+                            serverUrl: 'https://ED39DA02E2FC0B13E6BFC6D28510626C.gr7.us-east-1.eks.amazonaws.com'
                         ]
                     ]
                 ) {
@@ -134,7 +134,7 @@ pipeline {
                             contextName: 'jenkins-context',
                             credentialsId: 'kube-config',
                             namespace: 'jenkins',
-                            serverUrl: 'https://C51CFA192D315B312E453613818D833A.gr7.us-east-1.eks.amazonaws.com'
+                            serverUrl: 'https://ED39DA02E2FC0B13E6BFC6D28510626C.gr7.us-east-1.eks.amazonaws.com'
                         ]
                     ]
                 ) {
