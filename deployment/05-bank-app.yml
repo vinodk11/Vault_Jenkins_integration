@@ -24,7 +24,7 @@ spec:
       serviceAccountName: vault-auth
       containers:
       - name: bankapp
-        image: vinod1188/bankapp:v3
+        image: vinod1188/bankapp:v8
         ports:
         - containerPort: 8080
         env:
