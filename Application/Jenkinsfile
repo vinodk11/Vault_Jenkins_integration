@@ -266,7 +266,7 @@ spec:
                     git clone https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GIT_USERNAME}/Vault_Jenkins_integration
                     cd Vault_Jenkins_integration
 
-                    sed -i 's#image:.*#image: ${IMAGE_NAME}:${IMAGE_TAG}#' deployment/bank_app.yml
+                    sed -i 's#image:.*#image: ${IMAGE_NAME}:${IMAGE_TAG}#' deployment/bank-app.yml
 
                     git config user.name "${GIT_USERNAME}"
                     git config user.email "vinod.k118888@gmail.com"
