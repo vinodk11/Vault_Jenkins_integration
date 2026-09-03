@@ -66,7 +66,7 @@ spec:
             steps {
 
                 git branch: 'main',
-                url: 'https://github.com/vinodk11/ci_mega_project.git'
+                url: 'https://github.com/vinodk11/Vault_Jenkins_integration.git'
             }
         }
 
@@ -269,7 +269,7 @@ spec:
                 ]]
             ) {
                 sh """
-                    rm -rf DevSecOps-jenkins-vault
+                    rm -rf Vault_Jenkins_integration
 
                     git clone https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GIT_USERNAME}/Vault_Jenkins_integration
                     cd Vault_Jenkins_integration
