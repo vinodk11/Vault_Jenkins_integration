@@ -271,7 +271,7 @@ spec:
                     git config user.name "${GIT_USERNAME}"
                     git config user.email "vinod.k118888@gmail.com"
 
-                    git add deployment/bank_app.yml
+                    git add deployment/05-bank-app.yml
 
                     git diff --cached --quiet || \
                     git commit -m "Update image to ${IMAGE_TAG}"
