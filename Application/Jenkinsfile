@@ -271,16 +271,15 @@ spec:
                 sh """
                     rm -rf DevSecOps-jenkins-vault
 
-                    git clone https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GIT_USERNAME}/DevSecOps-jenkins-vault.git
+                    git clone https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GIT_USERNAME}/Vault_Jenkins_integration
+                    cd Vault_Jenkins_integration
 
-                    cd DevSecOps-jenkins-vault
-
-                    sed -i 's#image:.*#image: ${IMAGE_NAME}:${IMAGE_TAG}#' bank_app/bank_app.yml
+                    sed -i 's#image:.*#image: ${IMAGE_NAME}:${IMAGE_TAG}#' Application/bank_app.yml
 
                     git config user.name "${GIT_USERNAME}"
-                    git config user.email "<your-gmail-ID>"
+                    git config user.email "vinod.k118888@gmail.com"
 
-                    git add bank_app/bank_app.yml
+                    git add Application/bank_app.yml
 
                     git diff --cached --quiet || \
                     git commit -m "Update image to ${IMAGE_TAG}"
