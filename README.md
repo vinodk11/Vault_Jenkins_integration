@@ -122,3 +122,5 @@ By following these four guides, you'll build a production-style DevSecOps platfo
 - 🐳 Automated Docker image build and publishing
 - 🚀 Secure application deployment to Kubernetes with **dynamic secret injection**
 - 🌐 Application exposure using a shared **AWS Application Load Balancer (ALB)**
+
+Follow Me on YOUTUBE & LINKED

@@ -6,8 +6,38 @@ The application retrieves its sensitive configuration directly from Vault at run
 
 ---
 
-# 🔐 Step 1: Create the Vault Policy
+# 🔑 Step 1: Store Application Secrets
 
+Store the database and application credentials securely inside Vault.
+
+### MySQL Secrets
+
+```bash
+kubectl exec -n vault -it vault-0 -- \
+vault kv put secret/mysql \
+MYSQL_DATABASE=bankappdb \
+MYSQL_ROOT_PASSWORD=Test@123
+```
+
+### Application Secrets
+
+```bash
+kubectl exec -n vault -it vault-0 -- \
+vault kv put secret/frontend \
+MYSQL_ROOT_PASSWORD=Test@123
+```
+
+Verify the stored secrets.
+
+```bash
+kubectl exec -n vault -it vault-0 -- vault kv get secret/mysql
+
+kubectl exec -n vault -it vault-0 -- vault kv get secret/frontend
+```
+
+---
+
+# 🔐 Step 2: Create the Vault Policy
 Create a Vault policy that grants the application permission to access only the required secrets.
 
 Create a file named **`webapps-policy.hcl`**
@@ -48,9 +78,10 @@ vault policy write webapps-policy /tmp/webapps-policy.hcl
 >
 > Vault policies control which secrets an application is allowed to access. Following the **Principle of Least Privilege**, the application receives access only to the secrets it needs.
 
----
 
-# ☸️ Step 2: Create the Vault Kubernetes Role
+
+---
+# ☸️ Step 3: Create the Vault Kubernetes Role
 
 Next, map the Kubernetes ServiceAccount used by the application to the Vault policy.
 
@@ -58,7 +89,7 @@ Next, map the Kubernetes ServiceAccount used by the application to the Vault pol
 kubectl exec -n vault -it vault-0 -- \
 vault write auth/kubernetes/role/vault-role \
 bound_service_account_names=vault-auth \
-bound_service_account_namespaces="webapps" \
+bound_service_account_namespaces="cloudforge" \
 policies=webapps-policy \
 ttl=24h
 ```
@@ -72,36 +103,8 @@ ttl=24h
 | `policies` | Vault policy assigned after successful authentication |
 | `ttl` | Lifetime of the Vault token issued to the application |
 
----
 
-# 🔑 Step 3: Store Application Secrets
 
-Store the database and application credentials securely inside Vault.
-
-### MySQL Secrets
-
-```bash
-kubectl exec -n vault -it vault-0 -- \
-vault kv put secret/mysql \
-MYSQL_DATABASE=bankappdb \
-MYSQL_ROOT_PASSWORD=Test@123
-```
-
-### Application Secrets
-
-```bash
-kubectl exec -n vault -it vault-0 -- \
-vault kv put secret/frontend \
-MYSQL_ROOT_PASSWORD=Test@123
-```
-
-Verify the stored secrets.
-
-```bash
-vault kv get secret/mysql
-
-vault kv get secret/frontend
-```
 
 ---
 

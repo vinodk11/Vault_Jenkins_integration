@@ -79,17 +79,17 @@ Output Format (json)
 ---
 # Step 4: Clone GitHub Repository
 
-Create your own GitHub repository, fork or clone this https://github.com/AgasthyaGoud/Vault_Jenkins_integration.git repository locally, and push the project to your newly created repository.  
+Create your own GitHub repository, fork or clone this https://github.com/vinodk11/Vault_Jenkins_integration.git  repository to your locall, and push the project to your newly created repository.  
 
 ```bash
-git clone https://github.com/AgasthyaGoud/Vault_Jenkins_integration.git
+git clone https://github.com/vinodk11/Vault_Jenkins_integration.git
 
 cd repository
 ```
 Example:
 
 ```bash
-git clone https://github.com/AgasthyaGoud/Vault_Jenkins_integration.git
+git clone https://github.com/vinodk11/Vault_Jenkins_integration.git
 
 cd jenkins_server
 ```

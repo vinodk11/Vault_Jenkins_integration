@@ -174,7 +174,7 @@ Use the below snipet this cantians username and password as variables which crea
 This allows Maven builds to download dependencies and publish artifacts directly to Nexus Repository Manager.
 Click Submit.
 
-make sure this below nexus Ulrs: same as in the image in POM.xml file ![Alt text](../Application/pom.xml)
+make sure this below nexus Ulrs: same as in the image in POM.xml file ![Alt text](../Application/pom.xml) 
 
 ![Alt text](../content/16-51-40.png)
 
